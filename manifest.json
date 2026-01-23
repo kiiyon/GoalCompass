@@ -1,6 +1,6 @@
 {
-    "name": "GoalCompass - Harada Method",
-    "description": "原田式メソッド目標達成アプリ + NotebookLM振り返り連携",
+    "name": "GoalCompass",
+    "description": "NotebookLMと連携して、あなただけのAIパーソナルコーチを召喚！2026年こそ目標を達成したい人のための、究極のパートナー。",
     "version": "1.0.1",
     "manifest_version": 3,
     "permissions": [

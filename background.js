@@ -452,33 +452,7 @@ async function handleGetHistory(dateStr) {
     }
 }
 
-async function handleGetSchedule(date) {
-    const result = await chrome.storage.local.get(CONFIG_KEY);
-    const config = result[CONFIG_KEY] || {};
 
-    if (!config.gasUrl) {
-        return { success: false, error: 'GAS URLが設定されていません' };
-    }
-
-    try {
-        const url = `${config.gasUrl}?action=getSchedule&date=${date}`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.success) {
-            return {
-                success: true,
-                calendar: data.calendar || [],
-                tasks: data.tasks || []
-            };
-        } else {
-            return { success: false, error: data.error || '予定の取得に失敗' };
-        }
-    } catch (err) {
-        console.error('Schedule fetch failed:', err);
-        return { success: false, error: '予定の取得に失敗しました' };
-    }
-}
 
 async function handleGenerateAIResponse(userPrompt) {
     const result = await chrome.storage.local.get(CONFIG_KEY);

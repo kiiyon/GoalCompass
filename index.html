@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -302,13 +302,89 @@
                                     class="fa-solid fa-moon"></i></button>
                         </div>
                         <div class="habit-body">
-                            <div class="field-group">
+                            <div class="field-group centered-group">
                                 <label>起床時間</label>
-                                <select id="habit-wakeup" class="habit-input"></select>
+                                <div class="modern-time-picker compact">
+                                    <button class="ampm-toggle" data-target="habit-wakeup">午前</button>
+                                    <div class="time-dropdown" data-type="hour" data-base-id="habit-wakeup">
+                                        <div class="time-val">07</div>
+                                        <div class="time-menu">
+                                            <div>01</div>
+                                            <div>02</div>
+                                            <div>03</div>
+                                            <div>04</div>
+                                            <div>05</div>
+                                            <div>06</div>
+                                            <div class="active">07</div>
+                                            <div>08</div>
+                                            <div>09</div>
+                                            <div>10</div>
+                                            <div>11</div>
+                                            <div>12</div>
+                                        </div>
+                                    </div>
+                                    <span class="time-sep">:</span>
+                                    <div class="time-dropdown" data-type="min" data-base-id="habit-wakeup">
+                                        <div class="time-val">00</div>
+                                        <div class="time-menu">
+                                            <div class="active">00</div>
+                                            <div>05</div>
+                                            <div>10</div>
+                                            <div>15</div>
+                                            <div>20</div>
+                                            <div>25</div>
+                                            <div>30</div>
+                                            <div>35</div>
+                                            <div>40</div>
+                                            <div>45</div>
+                                            <div>50</div>
+                                            <div>55</div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="habit-wakeup" class="habit-input" value="07:00">
+                                </div>
                             </div>
-                            <div class="field-group">
+                            <div class="field-group centered-group">
                                 <label>就寝時間</label>
-                                <select id="habit-bedtime" class="habit-input"></select>
+                                <div class="modern-time-picker compact">
+                                    <button class="ampm-toggle" data-target="habit-bedtime">午後</button>
+                                    <div class="time-dropdown" data-type="hour" data-base-id="habit-bedtime">
+                                        <div class="time-val">11</div>
+                                        <div class="time-menu">
+                                            <div>01</div>
+                                            <div>02</div>
+                                            <div>03</div>
+                                            <div>04</div>
+                                            <div>05</div>
+                                            <div>06</div>
+                                            <div>07</div>
+                                            <div>08</div>
+                                            <div>09</div>
+                                            <div>10</div>
+                                            <div class="active">11</div>
+                                            <div>12</div>
+                                        </div>
+                                    </div>
+                                    <span class="time-sep">:</span>
+                                    <div class="time-dropdown" data-type="min" data-base-id="habit-bedtime">
+                                        <div class="time-val">00</div>
+                                        <div class="time-menu">
+                                            <div class="active">00</div>
+                                            <div>05</div>
+                                            <div>10</div>
+                                            <div>15</div>
+                                            <div>20</div>
+                                            <div>25</div>
+                                            <div>30</div>
+                                            <div>35</div>
+                                            <div>40</div>
+                                            <div>45</div>
+                                            <div>50</div>
+                                            <div>55</div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="habit-bedtime" class="habit-input" value="23:00">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -458,19 +534,15 @@
                                     class="fa-solid fa-moon"></i></button>
                         </div>
                         <div class="habit-body">
-                            <div class="mental-care-grid">
-                                <label class="mental-care-item">
-                                    <input type="checkbox" id="habit-mental-nap">
-                                    <span class="mental-care-label">昼寝</span>
-                                </label>
-                                <label class="mental-care-item">
-                                    <input type="checkbox" id="habit-mental-meditation">
-                                    <span class="mental-care-label">瞑想</span>
-                                </label>
-                                <label class="mental-care-item">
-                                    <input type="checkbox" id="habit-mental-stretch">
-                                    <span class="mental-care-label">ストレッチ</span>
-                                </label>
+                            <div id="habit-mental-menu" class="chip-container">
+                                <span class="chip" data-value="昼寝">昼寝<button class="chip-delete">×</button></span>
+                                <span class="chip" data-value="瞑想">瞑想<button class="chip-delete">×</button></span>
+                                <span class="chip" data-value="ストレッチ">ストレッチ<button class="chip-delete">×</button></span>
+                                <span class="chip" data-value="読書">読書<button class="chip-delete">×</button></span>
+                                <span class="chip" data-value="勉強">勉強<button class="chip-delete">×</button></span>
+                                <span class="chip" data-value="交流">交流<button class="chip-delete">×</button></span>
+                                <button class="chip-add" data-container="habit-mental-menu"><i
+                                        class="fa-solid fa-plus"></i></button>
                             </div>
                         </div>
                     </div>
@@ -543,7 +615,8 @@
                             <div class="journal-part-header"><i class="fa-regular fa-sun"></i> 朝の計画 (Morning)</div>
 
                             <div class="form-group">
-                                <label class="section-label">今日の一言 (Daily Declaration)</label>
+                                <label class="section-label"><i class="fa-solid fa-bullhorn"></i> 今日の一言 (Daily
+                                    Declaration)</label>
                                 <input type="text" id="journal-declaration" class="journal-input"
                                     placeholder="例：仕事は締切の2日前までに仕上げるぞ！" style="width: 100%; font-weight:bold;">
                             </div>
@@ -564,8 +637,11 @@
                                 <div class="split-col">
                                     <label class="section-label"><i class="fa-solid fa-list-check"></i> 今日必ずやること
                                         (To-Do)</label>
+                                    <div id="todo-ui-container" class="todo-ui-container">
+                                        <!-- Dynamic To-Do List -->
+                                    </div>
                                     <textarea id="journal-todo" class="journal-textarea sub-textarea"
-                                        placeholder="1. 提案書作成&#10;2. 部下との面談..."></textarea>
+                                        style="display: none;" placeholder="1. 提案書作成&#10;2. 部下との面談..."></textarea>
                                 </div>
                             </div>
 
@@ -574,12 +650,14 @@
                                 夜の振り返り (Evening)</div>
 
                             <div class="form-group">
-                                <label class="section-label">今日の行動の評価 (Score)</label>
-                                <p class="score-description">今日1日を心・技・体・生活の4つの観点から振り返ろう</p>
+                                <label class="section-label"><i class="fa-solid fa-star-half-stroke"></i> 今日の行動の評価
+                                    (Score)</label>
+                                <!-- Description Removed -->
                                 <div class="score-grid playful">
                                     <div class="score-item-playful">
                                         <div class="score-label">
                                             <span>心</span>
+                                            <span class="score-sub-label">メンタルの調子は？</span>
                                         </div>
                                         <div class="star-row">
                                             <span class="star-hint">Low</span>
@@ -597,6 +675,7 @@
                                     <div class="score-item-playful">
                                         <div class="score-label">
                                             <span>技</span>
+                                            <span class="score-sub-label">新しい学びは？</span>
                                         </div>
                                         <div class="star-row">
                                             <span class="star-hint">Low</span>
@@ -614,6 +693,7 @@
                                     <div class="score-item-playful">
                                         <div class="score-label">
                                             <span>体</span>
+                                            <span class="score-sub-label">身体の調子は？</span>
                                         </div>
                                         <div class="star-row">
                                             <span class="star-hint">Low</span>
@@ -631,6 +711,7 @@
                                     <div class="score-item-playful">
                                         <div class="score-label">
                                             <span>生活</span>
+                                            <span class="score-sub-label">生活の満足度は？</span>
                                         </div>
                                         <div class="star-row">
                                             <span class="star-hint">Low</span>
@@ -650,12 +731,14 @@
 
                             <div class="split-view-grid">
                                 <div class="split-col">
-                                    <label class="section-label">今日もう一度やり直せるとしたら</label>
+                                    <label class="section-label"><i class="fa-solid fa-rotate-left"></i>
+                                        今日もう一度やり直せるとしたら</label>
                                     <textarea id="journal-redo" class="journal-textarea medium"
                                         placeholder="例：好きな人に告白する"></textarea>
                                 </div>
                                 <div class="split-col">
-                                    <label class="section-label">今日自信を育てた出来事 (Good)</label>
+                                    <label class="section-label"><i class="fa-solid fa-medal"></i> 今日自信を育てた出来事
+                                        (Good)</label>
                                     <textarea id="journal-confidence" class="journal-textarea medium"
                                         placeholder="例：カッコよくなったねと言われる"></textarea>
                                 </div>
@@ -670,7 +753,8 @@
 
                             <div class="form-group" style="margin-top: 1rem;">
                                 <div class="label-with-action">
-                                    <label class="section-label">今日のアクティビティ履歴 (Evidence)</label>
+                                    <label class="section-label"><i class="fa-solid fa-shoe-prints"></i> 今日のアクティビティ履歴
+                                        (Evidence)</label>
                                     <button id="btn-get-history" class="btn-xs"><i
                                             class="fa-solid fa-clock-rotate-left"></i>
                                         履歴検索</button>
@@ -683,7 +767,7 @@
 
                     <div class="journal-actions">
                         <div class="act-left">
-                            <button id="btn-temp-save" class="btn-outline">一時保存</button>
+                            <button id="btn-temp-save" class="btn-outline-accent">一時保存</button>
                             <button id="btn-ai-format" class="btn-text" title="AIで文章を整える"><i
                                     class="fa-solid fa-wand-magic-sparkles"></i> AI整形</button>
                         </div>
@@ -717,9 +801,8 @@
             <div class="wizard-footer">
                 <div style="display: flex; gap: 10px;">
                     <button id="btn-wiz-cancel" class="btn-secondary">キャンセル</button>
-                    <button id="btn-wiz-save" class="btn-secondary"
-                        style="color: var(--accent-gold); border-color: var(--accent-gold);"><i
-                            class="fa-solid fa-floppy-disk"></i> 一時保存</button>
+                    <button id="btn-wiz-save" class="btn-outline-accent"><i class="fa-solid fa-floppy-disk"></i>
+                        一時保存</button>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <button id="btn-wiz-prev" class="btn-secondary" style="display:none;">戻る</button>

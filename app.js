@@ -211,21 +211,35 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userProfileBtn) {
             userProfileBtn.addEventListener('click', async () => {
                 console.log('User Profile Clicked');
-                if (typeof chrome !== 'undefined' && chrome.storage) {
-                    const result = await chrome.storage.local.get(CONFIG_KEY);
-                    const config = result[CONFIG_KEY] || {};
-                    if (configGasUrl) configGasUrl.value = config.gasUrl || '';
-                    if (configSsUrl) {
-                        configSsUrl.value = config.ssUrl || '';
-                        updateConfigLink(linkSsUrl, config.ssUrl);
+
+                // Fallback config object
+                let config = {};
+
+                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                    try {
+                        const result = await chrome.storage.local.get(CONFIG_KEY);
+                        config = result[CONFIG_KEY] || {};
+                    } catch (e) { console.error(e); }
+                } else {
+                    // Fallback to localStorage
+                    const stored = localStorage.getItem(CONFIG_KEY);
+                    if (stored) {
+                        try { config = JSON.parse(stored); } catch (e) { }
                     }
-                    if (configNotebookUrl) {
-                        configNotebookUrl.value = config.notebookUrl || '';
-                        updateConfigLink(linkNotebookUrl, config.notebookUrl);
-                    }
-                    if (configGeminiKey) configGeminiKey.value = config.geminiApiKey || '';
-                    if (configCustomPrompt) configCustomPrompt.value = config.customPrompt || '';
                 }
+
+                if (configGasUrl) configGasUrl.value = config.gasUrl || '';
+                if (configSsUrl) {
+                    configSsUrl.value = config.ssUrl || '';
+                    updateConfigLink(linkSsUrl, config.ssUrl);
+                }
+                if (configNotebookUrl) {
+                    configNotebookUrl.value = config.notebookUrl || '';
+                    updateConfigLink(linkNotebookUrl, config.notebookUrl);
+                }
+                if (configGeminiKey) configGeminiKey.value = config.geminiApiKey || '';
+                if (configCustomPrompt) configCustomPrompt.value = config.customPrompt || '';
+
                 if (settingsModal) settingsModal.classList.add('open');
             });
         }
@@ -253,12 +267,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     geminiApiKey: configGeminiKey ? configGeminiKey.value : '',
                     customPrompt: configCustomPrompt ? configCustomPrompt.value : ''
                 };
-                if (typeof chrome !== 'undefined' && chrome.storage) {
+                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
                     await chrome.storage.local.set({ [CONFIG_KEY]: config });
-                    alert('設定を保存しました');
+                    alert('設定を保存しました (Extension Storage)');
                     settingsModal.classList.remove('open');
                 } else {
-                    alert('拡張機能外、またはストレージ権限がありません');
+                    // Fallback to localStorage
+                    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+                    alert('設定を保存しました (Local Storage)');
+                    settingsModal.classList.remove('open');
                 }
             });
         }
@@ -315,27 +332,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'kpi-item';
             div.dataset.index = index;
+            const isDecrease = kpi.direction === 'decrease';
+            // Get start value from first history entry if available
+            const startValue = kpi.history?.[0]?.value || '';
+            div.dataset.startValue = startValue;
             div.innerHTML = `
                 <div class="kpi-header">
                     <span class="kpi-badge">KPI ${index + 1}</span>
                     <input type="text" class="kpi-name-input" data-field="name" placeholder="例：TOEIC" value="${kpi.name || ''}">
+                    <button class="kpi-direction-toggle ${isDecrease ? 'decrease' : ''}" data-field="direction" title="目標の方向を切り替え">
+                        ${isDecrease ? '<i class="fa-solid fa-arrow-down"></i> 減少' : '<i class="fa-solid fa-arrow-up"></i> 増加'}
+                    </button>
                     <button class="kpi-delete-btn" title="削除"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div class="kpi-values">
-                    <div class="kpi-value-group">
+                    <div class="kpi-value-group" style="flex: 2;">
                         <label>現在値</label>
                         <input type="number" class="kpi-number-input" data-field="current" placeholder="0" value="${kpi.current || ''}">
                     </div>
-                    <div class="kpi-arrow">→</div>
-                    <div class="kpi-value-group">
+                    <div class="kpi-arrow">${isDecrease ? '↓' : '→'}</div>
+                    <div class="kpi-value-group" style="flex: 2;">
                         <label>目標値</label>
                         <input type="number" class="kpi-number-input" data-field="target" placeholder="100" value="${kpi.target || ''}">
                     </div>
-                    <div class="kpi-value-group">
-                        <label>単位</label>
-                        <input type="text" class="kpi-unit-input" data-field="unit" placeholder="点" value="${kpi.unit || ''}">
-                    </div>
-                    <div class="kpi-value-group">
+                </div>
+                <div class="kpi-values" style="margin-bottom: 0;">
+                     <div class="kpi-value-group">
                         <label>期日</label>
                         <input type="date" class="kpi-date-input" data-field="deadline" value="${kpi.deadline || ''}">
                     </div>
@@ -348,10 +370,22 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add event listeners
             const currentInput = div.querySelector('[data-field="current"]');
             const targetInput = div.querySelector('[data-field="target"]');
+            const directionBtn = div.querySelector('.kpi-direction-toggle');
             const deleteBtn = div.querySelector('.kpi-delete-btn');
+            const arrowDiv = div.querySelector('.kpi-arrow');
 
             currentInput.addEventListener('input', () => updateKpiProgressForElement(div));
             targetInput.addEventListener('input', () => updateKpiProgressForElement(div));
+
+            directionBtn.addEventListener('click', () => {
+                const isNowDecrease = directionBtn.classList.toggle('decrease');
+                directionBtn.innerHTML = isNowDecrease
+                    ? '<i class="fa-solid fa-arrow-down"></i> 減少'
+                    : '<i class="fa-solid fa-arrow-up"></i> 増加';
+                arrowDiv.textContent = isNowDecrease ? '↓' : '→';
+                updateKpiProgressForElement(div);
+            });
+
             deleteBtn.addEventListener('click', () => deleteKpi(index));
 
             // Initial progress update
@@ -363,29 +397,36 @@ document.addEventListener('DOMContentLoaded', () => {
         function updateKpiProgressForElement(element) {
             const currentInput = element.querySelector('[data-field="current"]');
             const targetInput = element.querySelector('[data-field="target"]');
+            const directionBtn = element.querySelector('.kpi-direction-toggle');
             const progressFill = element.querySelector('.kpi-progress-fill');
             if (!currentInput || !targetInput || !progressFill) return;
 
             const current = parseFloat(currentInput.value) || 0;
             const target = parseFloat(targetInput.value) || 0;
+            const isDecrease = directionBtn?.classList.contains('decrease');
+            // Use stored start value from history, or current value as fallback
+            const start = parseFloat(element.dataset.startValue) || current;
 
-            if (target === 0) {
-                progressFill.style.width = '0%';
-                return;
-            }
+            let progress = 0;
 
-            let progress;
-            if (target > current) {
-                progress = (current / target) * 100;
-            } else if (target < current) {
-                // Decrease goal (e.g., weight)
-                const startValue = current;
-                progress = ((startValue - current) / (startValue - target)) * 100;
-                // If current is already at or below target, 100%
+            if (isDecrease) {
+                // Decrease goal (e.g., weight: 80kg → 65kg)
+                // If no history yet, treat current as start
+                const effectiveStart = start || current;
+                const totalChange = effectiveStart - target;
+                const currentChange = effectiveStart - current;
+                if (totalChange > 0) {
+                    progress = (currentChange / totalChange) * 100;
+                }
+                // If current <= target, goal achieved
                 if (current <= target) progress = 100;
             } else {
-                progress = 100;
+                // Increase goal (e.g., TOEIC: 0 → 800)
+                if (target > 0) {
+                    progress = (current / target) * 100;
+                }
             }
+
             progress = Math.max(0, Math.min(100, progress));
             progressFill.style.width = `${progress}%`;
         }
@@ -407,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function addKpi() {
             if (!appState.kpis) appState.kpis = [];
-            appState.kpis.push({ name: '', current: '', target: '', unit: '', history: [] });
+            appState.kpis.push({ name: '', start: '', current: '', target: '', direction: 'increase', history: [] });
             renderKpis();
         }
 
@@ -427,8 +468,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = item.querySelector('[data-field="name"]')?.value || '';
                 const current = item.querySelector('[data-field="current"]')?.value || '';
                 const target = item.querySelector('[data-field="target"]')?.value || '';
-                const unit = item.querySelector('[data-field="unit"]')?.value || '';
                 const deadline = item.querySelector('[data-field="deadline"]')?.value || '';
+                const directionBtn = item.querySelector('.kpi-direction-toggle');
+                const direction = directionBtn?.classList.contains('decrease') ? 'decrease' : 'increase';
 
                 // Preserve history from existing state
                 const existingHistory = appState.kpis[index]?.history || [];
@@ -447,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                kpis.push({ name, current, target, unit, deadline, history });
+                kpis.push({ name, current, target, deadline, direction, history });
             });
             return kpis;
         }
@@ -989,9 +1031,7 @@ document.addEventListener('DOMContentLoaded', () => {
             muscleDetail: document.getElementById('habit-muscle-detail'),
             joggingDist: document.getElementById('habit-jogging-dist'),
             joggingTime: document.getElementById('habit-jogging-time'),
-            mentalNap: document.getElementById('habit-mental-nap'),
-            mentalMeditation: document.getElementById('habit-mental-meditation'),
-            mentalStretch: document.getElementById('habit-mental-stretch'),
+            mentalMenuId: 'habit-mental-menu',
             socialMenuId: 'habit-social-menu'
         };
 
@@ -1103,6 +1143,162 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // --- To-Do Default List ---
+
+        // --- Interactive To-Do List (Checkboxes) ---
+        const todoContainer = document.getElementById('todo-ui-container');
+        const todoTextarea = document.getElementById('journal-todo');
+
+        window.initTodoUI = function () {
+            if (!todoContainer || !todoTextarea) return;
+
+            // Parse existing text
+            const raw = todoTextarea.value || '';
+            const lines = raw.split('\n').filter(l => l.trim() !== '');
+            let items = [];
+
+            if (lines.length > 0) {
+                items = lines.map(line => {
+                    const checked = line.includes('[x]');
+                    // Clean text: remove marks and leading numbers
+                    let text = line.replace(/\[[x ]\]/g, '').trim();
+                    text = text.replace(/^\d+\.\s*/, '');
+                    return { checked, text };
+                });
+            }
+
+            // Ensure minimum 3 items
+            while (items.length < 3) {
+                items.push({ checked: false, text: '' });
+            }
+
+            renderTodoUI(items);
+        };
+
+        function renderTodoUI(items) {
+            todoContainer.innerHTML = '';
+            items.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'todo-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'todo-checkbox';
+                checkbox.checked = item.checked;
+                checkbox.addEventListener('change', syncTodoToTextarea);
+
+                const inputContainer = document.createElement('div');
+                inputContainer.className = 'todo-input-container';
+
+                const number = document.createElement('span');
+                number.className = 'todo-number';
+                number.innerText = `${index + 1}.`;
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'todo-input';
+                input.value = item.text;
+                input.addEventListener('input', syncTodoToTextarea);
+                // Enter key adds new item
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const currentItems = collectTodoItems();
+                        currentItems.splice(index + 1, 0, { checked: false, text: '' });
+                        renderTodoUI(currentItems);
+                        // Focus next input
+                        setTimeout(() => {
+                            const inputs = todoContainer.querySelectorAll('.todo-input');
+                            if (inputs[index + 1]) inputs[index + 1].focus();
+                        }, 10);
+                        syncTodoToTextarea();
+                    }
+                    // Backspace on empty deletes item (if count > 3)
+                    if (e.key === 'Backspace' && input.value === '' && items.length > 3) {
+                        e.preventDefault();
+                        const currentItems = collectTodoItems();
+                        currentItems.splice(index, 1);
+                        renderTodoUI(currentItems);
+                        setTimeout(() => {
+                            const inputs = todoContainer.querySelectorAll('.todo-input');
+                            // Focus previous
+                            if (inputs[index - 1]) inputs[index - 1].focus();
+                        }, 10);
+                        syncTodoToTextarea();
+                    }
+                });
+
+                inputContainer.appendChild(number);
+                inputContainer.appendChild(input);
+
+                // Delete Button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'todo-delete-btn';
+                deleteBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
+                deleteBtn.title = '削除';
+                deleteBtn.onclick = () => {
+                    const currentItems = collectTodoItems();
+                    if (currentItems.length <= 1) {
+                        // Optional: prevent deleting the last item or clear it instead
+                        currentItems[index].text = '';
+                        currentItems[index].checked = false;
+                    } else {
+                        currentItems.splice(index, 1);
+                    }
+                    renderTodoUI(currentItems);
+                    syncTodoToTextarea();
+                };
+
+                row.appendChild(checkbox);
+                row.appendChild(inputContainer);
+                row.appendChild(deleteBtn);
+                todoContainer.appendChild(row);
+            });
+
+            // Add Item Button
+            const addBtn = document.createElement('button');
+            addBtn.className = 'todo-btn-add';
+            addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> タスクを追加';
+            addBtn.onclick = () => {
+                const currentItems = collectTodoItems();
+                currentItems.push({ checked: false, text: '' });
+                renderTodoUI(currentItems);
+                // Focus new
+                setTimeout(() => {
+                    const inputs = todoContainer.querySelectorAll('.todo-input');
+                    if (inputs[inputs.length - 1]) inputs[inputs.length - 1].focus();
+                }, 10);
+                syncTodoToTextarea();
+            };
+            todoContainer.appendChild(addBtn);
+        }
+
+        function collectTodoItems() {
+            const items = [];
+            todoContainer.querySelectorAll('.todo-item').forEach(row => {
+                items.push({
+                    checked: row.querySelector('.todo-checkbox').checked,
+                    text: row.querySelector('.todo-input').value
+                });
+            });
+            return items;
+        }
+
+        function syncTodoToTextarea() {
+            const items = collectTodoItems();
+            const text = items.map((item, idx) => {
+                const mark = item.checked ? '[x]' : '[ ]';
+                // Save format: "[ ] 1. Task Name"
+                return `${mark} ${idx + 1}. ${item.text}`;
+            }).join('\n');
+            todoTextarea.value = text;
+        }
+
+        // Init on load
+        if (todoContainer) {
+            // Wait briefly for textarea to be potentially populated if coming from legacy
+            setTimeout(window.initTodoUI, 100);
+        }
         function setupChipUI(containerId, savedValue, onChange) {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -1369,6 +1565,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (journalElements.redo) journalElements.redo.value = log.redo || '';
             if (journalElements.confidence) journalElements.confidence.value = log.confidence || '';
 
+            // Refresh Todo UI
+            if (window.initTodoUI) window.initTodoUI();
+
             // Scores
             if (log.scores) {
                 try {
@@ -1403,8 +1602,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const isSleepRest = sh.wakeup === 'お休み';
             setRestMode('sleep', isSleepRest);
             if (!isSleepRest) {
-                if (h.wakeup) h.wakeup.value = sh.wakeup || '';
-                if (h.bedtime) h.bedtime.value = sh.bedtime || '';
+                if (h.wakeup && window.refreshModernTimePicker) window.refreshModernTimePicker('habit-wakeup', sh.wakeup || '');
+                if (h.bedtime && window.refreshModernTimePicker) window.refreshModernTimePicker('habit-bedtime', sh.bedtime || '');
             }
 
             // English
@@ -1485,15 +1684,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Mental Care
             const isMentalRest = sh.mental === 'お休み';
             setRestMode('mental', isMentalRest);
-            if (!isMentalRest) {
-                if (h.mentalNap) h.mentalNap.checked = !!sh.mentalNap;
-                if (h.mentalMeditation) h.mentalMeditation.checked = !!sh.mentalMeditation;
-                if (h.mentalStretch) h.mentalStretch.checked = !!sh.mentalStretch;
-            } else {
-                if (h.mentalNap) h.mentalNap.checked = false;
-                if (h.mentalMeditation) h.mentalMeditation.checked = false;
-                if (h.mentalStretch) h.mentalStretch.checked = false;
-            }
+            setupChipUI(h.mentalMenuId, isMentalRest ? null : sh.mentalMenu);
 
             // Render Routine Matrix for selected date
             renderRoutineMatrix(dateStr);
@@ -1729,9 +1920,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     muscleDetail: document.getElementById('habit-muscle-detail'),
                     joggingDist: document.getElementById('habit-jogging-dist'),
                     joggingTime: document.getElementById('habit-jogging-time'),
-                    mentalNap: document.getElementById('habit-mental-nap'),
-                    mentalMeditation: document.getElementById('habit-mental-meditation'),
-                    mentalStretch: document.getElementById('habit-mental-stretch'),
+                    mentalMenuId: 'habit-mental-menu',
                     socialMenuId: 'habit-social-menu'
                 };
 
@@ -1776,10 +1965,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         muscleDetail: isRest('muscle') ? '' : finalDetail,
                         joggingDist: getRestVal('jogging', hEl.joggingDist?.value || ''),
                         joggingTime: isRest('jogging') ? '' : (hEl.joggingTime?.value || ''),
-                        mentalNap: isRest('mental') ? false : (hEl.mentalNap?.checked || false),
-                        mentalMeditation: isRest('mental') ? false : (hEl.mentalMeditation?.checked || false),
-                        mentalStretch: isRest('mental') ? false : (hEl.mentalStretch?.checked || false),
                         mental: isRest('mental') ? 'お休み' : '',
+                        mentalMenu: getRestVal('mental', getChipValues(hEl.mentalMenuId)),
                         socialMenu: getRestVal('social', getChipValues(hEl.socialMenuId))
                     };
                     appState.logs[dateKey] = currentLog;
@@ -1939,26 +2126,105 @@ document.addEventListener('DOMContentLoaded', () => {
         // HABIT LOG SECTION
         // ========================================
         function initHabitLog() {
-            // Populate Time Selects (15min intervals)
-            ['habit-wakeup', 'habit-bedtime'].forEach(id => {
-                const sel = document.getElementById(id);
-                if (!sel) return;
-                sel.innerHTML = '<option value="">--:--</option>';
-                for (let h = 0; h < 24; h++) {
-                    for (let m = 0; m < 60; m += 15) {
-                        const hh = String(h).padStart(2, '0');
-                        const mm = String(m).padStart(2, '0');
-                        const val = `${hh}:${mm}`;
-                        const ampm = h < 12 ? '午前' : '午後';
-                        const dispH = h % 12 || 12;
-                        const disp = `${ampm}${dispH}:${mm}`;
-                        const opt = document.createElement('option');
-                        opt.value = val;
-                        opt.textContent = disp;
-                        sel.appendChild(opt);
-                    }
-                }
+            // Custom Time Dropdown Logic
+            document.querySelectorAll('.time-dropdown').forEach(dropdown => {
+                const valDisplay = dropdown.querySelector('.time-val');
+                const menu = dropdown.querySelector('.time-menu');
+                const items = menu.querySelectorAll('div');
+                const baseId = dropdown.dataset.baseId;
+                const hidden = document.getElementById(baseId);
+
+                dropdown.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close others
+                    document.querySelectorAll('.time-menu.open').forEach(m => {
+                        if (m !== menu) m.classList.remove('open');
+                    });
+                    menu.classList.toggle('open');
+                });
+
+                items.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        valDisplay.textContent = item.textContent;
+                        items.forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        menu.classList.remove('open');
+                        updateHidden(dropdown);
+                    });
+                });
             });
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.time-menu.open').forEach(m => m.classList.remove('open'));
+            });
+
+            const ampmToggles = document.querySelectorAll('.modern-time-picker .ampm-toggle');
+            ampmToggles.forEach(toggle => {
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggle.textContent = toggle.textContent === '午前' ? '午後' : '午前';
+                    // Find the hidden input and update it
+                    const picker = toggle.closest('.modern-time-picker');
+                    const dropdown = picker.querySelector('.time-dropdown');
+                    if (dropdown) updateHidden(dropdown);
+                });
+            });
+
+            function updateHidden(someChildOfPicker) {
+                const picker = someChildOfPicker.closest('.modern-time-picker');
+                if (!picker) return;
+                const toggle = picker.querySelector('.ampm-toggle');
+                const hourDropdown = picker.querySelector('.time-dropdown[data-type="hour"]');
+                const minDropdown = picker.querySelector('.time-dropdown[data-type="min"]');
+                const hiddenInput = picker.querySelector('.habit-input');
+
+                let h = parseInt(hourDropdown.querySelector('.time-val').textContent);
+                const m = hourDropdown.closest('.modern-time-picker').querySelector('.time-dropdown[data-type="min"] .time-val').textContent;
+                const isPM = toggle.textContent === '午後';
+
+                if (isPM && h < 12) h += 12;
+                if (!isPM && h === 12) h = 0;
+
+                hiddenInput.value = `${String(h).padStart(2, '0')}:${m}`;
+            }
+
+            window.refreshModernTimePicker = (id, timeStr) => {
+                if (!timeStr || timeStr === "--:--" || timeStr === "お休み") return;
+                const hidden = document.getElementById(id);
+                if (!hidden) return;
+                const picker = hidden.closest('.modern-time-picker');
+                if (!picker) return;
+
+                const [h24, m] = timeStr.split(':').map(Number);
+                const isPM = h24 >= 12;
+                let h12 = h24 % 12;
+                if (h12 === 0) h12 = 12;
+
+                const toggle = picker.querySelector('.ampm-toggle');
+                toggle.textContent = isPM ? '午後' : '午前';
+
+                const hourDropdown = picker.querySelector('.time-dropdown[data-type="hour"]');
+                const minDropdown = picker.querySelector('.time-dropdown[data-type="min"]');
+
+                const hourValStr = String(h12).padStart(2, '0');
+                const minValStr = String(m).padStart(2, '0');
+
+                hourDropdown.querySelector('.time-val').textContent = hourValStr;
+                minDropdown.querySelector('.time-val').textContent = minValStr;
+
+                // Update active class in menu
+                [hourDropdown, minDropdown].forEach(d => {
+                    const targetVal = d.querySelector('.time-val').textContent;
+                    d.querySelectorAll('.time-menu div').forEach(item => {
+                        if (item.textContent === targetVal) item.classList.add('active');
+                        else item.classList.remove('active');
+                    });
+                });
+
+                hidden.value = timeStr;
+            };
 
             // Stretch Checkbox Listener (UI Toggle)
             const h = habitElements;
@@ -2126,10 +2392,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const habits = [
                     { id: 'muscle', name: '筋トレ', key: '[筋トレ]' },
                     { id: 'english', name: '英会話/学習', key: ['[英語]', '[English]'] },
-                    { id: 'note', name: 'Note/発信', key: ['[Note]', '[発信]', 'note'] },
+                    { id: 'note', name: '発信活動', key: ['[Note]', '[発信]', 'note'] },
                     { id: 'early', name: '早寝早起き', key: '[睡眠]' },
                     { id: 'jog', name: 'ジョギング', key: '[Jog]' },
-                    { id: 'stretch', name: 'ストレッチ', key: '[ストレッチ]' }
+                    { id: 'mental', name: 'メンタルケア', key: ['[ストレッチ]', '[メンタル]', 'nap', 'meditation'] }
                 ];
 
                 // Build Table HTML
@@ -2234,14 +2500,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         datasets: [{
                             label: '週間平均',
                             data: dataset,
-                            backgroundColor: 'rgba(255, 215, 0, 0.15)',
-                            borderColor: accentColor,
-                            pointBackgroundColor: accentColor,
+                            backgroundColor: 'rgba(46, 204, 113, 0.15)', // Green tint
+                            borderColor: '#2ecc71', // Emerald green border
+                            pointBackgroundColor: '#2ecc71', // pure green for points
                             pointBorderColor: '#fff',
                             pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: accentColor,
+                            pointHoverBorderColor: '#2ecc71',
                             borderWidth: 2,
-                            pointRadius: 4
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
                         }]
                     },
                     options: {
@@ -2251,7 +2518,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 grid: { color: gridColor },
                                 pointLabels: {
                                     color: textColor,
-                                    font: { size: 12, family: "'Inter', sans-serif" }
+                                    font: { size: 15, family: "'Inter', sans-serif" },
+                                    padding: 20
                                 },
                                 min: 0,
                                 max: 5,
