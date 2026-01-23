@@ -3142,8 +3142,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .matrix-cell.done {
-    color: #FFD700;
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+    color: var(--accent-gold);
+    filter: drop-shadow(0 0 4px rgba(126, 214, 165, 0.4));
     transform: scale(1.1);
 }
 
@@ -3179,7 +3179,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 /* Active Glow */
 .streak-card.active-streak {
-    border-color: rgba(255, 87, 34, 0.3);
+    border-color: rgba(126, 214, 165, 0.3);
 }
 
 .streak-card.active-streak::before {
@@ -3189,8 +3189,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #FF5722, #FFC107);
-    box-shadow: 0 0 10px rgba(255, 87, 34, 0.5);
+    background: linear-gradient(90deg, #7ed6a5, #2ecc71);
+    box-shadow: 0 0 10px rgba(126, 214, 165, 0.5);
 }
 
 .streak-card-header {
@@ -3212,8 +3212,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .active-streak .streak-icon-box {
-    color: #FFD700;
-    background: rgba(255, 215, 0, 0.1);
+    color: var(--accent-gold);
+    background: rgba(126, 214, 165, 0.1);
 }
 
 .streak-label {
@@ -3260,8 +3260,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .active-streak .streak-footer {
-    color: #FFD700;
-    background: rgba(255, 215, 0, 0.05);
+    color: var(--accent-gold);
+    background: rgba(126, 214, 165, 0.05);
 }
 
 /* 6. Radar Chart Tweaks */
