@@ -1166,7 +1166,7 @@ textarea {
 
 .meta-label,
 .section-label {
-    font-size: 0.95rem;
+    font-size: 1.05rem !important;
     /* Slightly larger */
     color: var(--text-secondary);
     font-weight: 700;
@@ -1347,8 +1347,9 @@ textarea {
 }
 
 .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
     gap: 1.5rem;
     margin-top: 1rem;
 }
@@ -1370,7 +1371,14 @@ textarea {
     border: 1px solid var(--surface-glass-border);
     border-radius: 12px;
     padding: 1.2rem;
+    flex: 0 1 calc(50% - 0.75rem);
     transition: all 0.3s;
+}
+
+@media (max-width: 768px) {
+    .kpi-item {
+        flex: 1 1 100%;
+    }
 }
 
 .kpi-item:hover {
@@ -1823,6 +1831,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .journal-col:last-child {
     border-right: none;
+}
+
+.journal-bottom-links {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
 }
 
 .schedule-tools {
@@ -3183,13 +3198,45 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .dashboard-tabs {
     display: flex;
     justify-content: flex-start;
+    align-items: center;
     gap: 0.5rem;
     margin-bottom: 2rem;
     padding: 0.25rem;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 12px;
-    width: fit-content;
+    width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dash-tab-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dashboard-links {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dash-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.2s ease;
+}
+
+.dash-link-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .dash-tab-btn {
@@ -3361,8 +3408,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 /* 5. Streak Cards Grid */
 .streak-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
 }
 
 .streak-card {
@@ -3370,7 +3417,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 1.5rem;
+    padding: 1.1rem;
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.4) 100%);
     border: 1px solid rgba(255, 255, 255, 0.05);
     position: relative;
@@ -3402,8 +3449,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     margin-bottom: 0.5rem;
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.05);
-    width: 50px;
-    height: 50px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3427,7 +3474,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .streak-number {
     font-family: 'Poppins', sans-serif;
-    font-size: 2.5rem;
+    font-size: 2.1rem;
     font-weight: 700;
     line-height: 1;
     background: linear-gradient(to bottom, #fff, #94a3b8);
@@ -3478,15 +3525,15 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .dashboard-grid-2col>.card {
-    min-height: 350px;
+    min-height: 300px;
     display: flex;
     flex-direction: column;
 }
 
 .chart-container {
-    height: 280px;
+    height: 240px;
     width: 100%;
-    padding: 1rem;
+    padding: 0.6rem 0.9rem 0.9rem;
     flex: 1;
 }
 
@@ -3528,8 +3575,10 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .todo-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 2px 0;
+    gap: 8px;
+    padding: 0 !important;
+    margin-bottom: 4px !important;
+    min-height: 32px;
 }
 
 .todo-checkbox {
@@ -3583,7 +3632,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     color: var(--text-primary);
     font-family: inherit;
     font-size: 1rem;
-    padding: 4px 0;
+    padding: 2px 0 !important;
     border-bottom: 1px solid transparent;
     transition: all 0.2s;
     width: 100%;
@@ -3602,6 +3651,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .todo-btn-add {
     margin-top: 5px;
+    margin-bottom: 2rem;
     background: transparent;
     border: 1px dashed var(--text-secondary);
     color: var(--text-secondary);
@@ -3627,6 +3677,124 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     margin-left: 5px;
     opacity: 0.5;
     transition: opacity 0.2s, color 0.2s;
+}
+
+/* --- Meal Log --- */
+.meal-ui-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.meal-quick-panel {
+    grid-column: 1 / -1;
+    display: none;
+    padding: 0.75rem;
+    border: 1px dashed rgba(255, 255, 255, 0.16);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.meal-quick-panel.open {
+    display: block;
+}
+
+.meal-quick-title {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.meal-quick-text {
+    height: 110px;
+    resize: vertical;
+}
+
+.meal-quick-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.meal-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.meal-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+}
+
+.meal-textarea {
+    height: 56px;
+    resize: none;
+}
+
+.meal-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+/* --- Meal AI Modal --- */
+.meal-ai-section {
+    margin-bottom: 1.25rem;
+}
+
+.meal-ai-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.meal-ai-summary {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--surface-glass-border);
+    border-radius: 10px;
+    padding: 0.75rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    min-height: 52px;
+}
+
+.meal-ai-nutrition {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.meal-ai-nutrition .nutri-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.meal-ai-json {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--surface-glass-border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+}
+
+.meal-ai-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
 }
 
 .todo-delete-btn:hover {
@@ -3993,4 +4161,442 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .centered-group {
     flex: none !important;
     /* Prevent them from stretching to fill half the card each */
+}
+
+/* --- Simplified Habit Card Styles --- */
+
+.habit-card.simple-habit {
+    min-height: auto;
+    height: auto;
+    padding: 1.5rem;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.habit-header-simple {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.habit-header-simple h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.habit-actions-simple {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.action-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--surface-glass-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 80px;
+}
+
+.action-btn i {
+    font-size: 1.5rem;
+    margin-bottom: 2px;
+}
+
+.action-btn span {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Done Button Style */
+.action-btn.done-btn:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    background: rgba(126, 214, 165, 0.1);
+}
+
+.action-btn.done-btn.active {
+    background: var(--accent-gold);
+    color: #1a1a1a;
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 15px var(--accent-gold-glow);
+}
+
+/* Rest Button Style */
+.action-btn.rest-btn-simple:hover {
+    border-color: #a0a0a0;
+    color: #e0e0e0;
+}
+
+.action-btn.rest-btn-simple.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Feedback Message */
+.habit-feedback {
+    display: none;
+    text-align: center;
+    color: var(--accent-gold);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* When done, hide actions and show feedback */
+.habit-card.completed .habit-actions-simple {
+    display: none;
+}
+
+.habit-card.completed .habit-feedback {
+    display: block;
+}
+
+/* When resting, dim the card */
+.habit-card.resting {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.habit-card.resting .habit-actions-simple {
+    opacity: 0.5;
+    pointer-events: none;
+    /* Disable clicks */
+}
+
+/* --- Feedback Undo Button --- */
+.habit-card {
+    position: relative;
+    /* For absolute positioning of feedback elements */
+}
+
+/* Feedback container adjustment */
+.habit-feedback {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    /* Reset margins as it is now full cover */
+    margin: 0;
+    background: transparent;
+    /* Or slight background if needed */
+}
+
+.habit-card.completed .habit-feedback {
+    display: flex;
+}
+
+.feedback-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    margin-bottom: 0;
+}
+
+.undo-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+}
+
+.undo-btn:hover {
+    background: rgba(255, 100, 100, 0.2);
+    color: #ff6b6b;
+}
+
+/* Simple Rest State styling adjustment */
+.habit-card.resting {
+    position: relative;
+}
+
+/* Add an undo button for REST state too if needed, 
+   but currently rest state just dims. 
+   We can add an overlay for rest state to show an un-rest button if desired, 
+   or stick to "click again to toggle" logic for rest. 
+   For now, "Rest" button toggles, so no specific overlay needed.
+*/
+
+/* --- Fix for Habit Card Design --- */
+
+.habit-card {
+    position: relative;
+    overflow: hidden;
+    /* Ensure overlay respects border-radius */
+    isolation: isolate;
+    /* Create stacking context */
+}
+
+/* Make feedback overlay opaque to hide underlying content */
+.habit-feedback {
+    background: #161b22;
+    /* Match card background mostly */
+    backdrop-filter: blur(10px);
+    z-index: 20;
+    /* Ensure it's on top of everything */
+}
+
+/* Completed State Adjustments */
+.habit-card.completed .habit-feedback {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Ensure Undo button is clickable and visible */
+.undo-btn {
+    z-index: 21;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    top: 10px;
+    right: 10px;
+}
+
+.undo-btn:hover {
+    background: rgba(255, 100, 100, 0.3);
+}
+
+/* Hide normal delete button when completed to avoid confusion */
+.habit-card.completed .delete-habit-btn {
+    display: none !important;
+}
+
+/* Rest State: just dim, no overlay needed usually, but ensuring interaction */
+.habit-card.resting {
+    opacity: 0.6;
+    filter: grayscale(0.8);
+}
+
+/* --- Rest State Feedback --- */
+
+/* Initially hidden */
+.habit-rest-feedback {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    background: rgba(22, 27, 34, 0.85);
+    /* Slightly transparent dark */
+    backdrop-filter: blur(4px);
+    margin: 0;
+}
+
+/* Show when resting */
+.habit-card.resting .habit-rest-feedback {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Reset opacity/filter for the card when using overlay method */
+.habit-card.resting {
+    opacity: 1;
+    /* Reset opacity since we use overlay now */
+    filter: none;
+    /* Reset filter */
+}
+
+/* Rest Text */
+.rest-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #a0a0a0;
+    /* Gray for rest */
+    margin-bottom: 0;
+}
+
+/* --- Compact Habit Grid Configuration (Post-Move Adjustment) --- */
+
+.habit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .habit-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+.habit-card {
+    /* Reduce padding and height to match Score cards roughly */
+    padding: 1rem;
+    min-height: auto;
+    /* Let content dictate, but keep compact */
+    height: 100%;
+}
+
+.habit-header-simple {
+    margin-bottom: 0.5rem;
+}
+
+.habit-header-simple h3 {
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.habit-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+}
+
+/* Adjust button sizes for compact layout */
+.habit-actions-simple {
+    gap: 0.5rem;
+    margin-top: auto;
+    /* Push to bottom */
+}
+
+.action-btn {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+    flex: 1;
+    /* Distribute space */
+    justify-content: center;
+}
+
+.action-btn i {
+    font-size: 0.9rem;
+    margin-right: 4px;
+}
+
+
+/* Make Add Habit card match compact size */
+.add-habit-card {
+    min-height: 150px !important;
+    /* Override inline style if necessary via JS, but CSS wins usually */
+}
+
+/* --- Compact Habit Grid Configuration (4 Columns Update) --- */
+
+.habit-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.8rem;
+}
+
+@media (max-width: 1024px) {
+    .habit-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .habit-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+.habit-card {
+    padding: 0.8rem;
+    min-height: auto;
+}
+
+.habit-header-simple h3 {
+    font-size: 0.85rem;
+}
+
+.habit-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+}
+
+.habit-actions-simple {
+    gap: 0.4rem;
+}
+
+.action-btn {
+    padding: 0.3rem;
+    font-size: 0.7rem;
+}
+
+.action-btn i {
+    font-size: 0.8rem;
+}
+
+.action-btn span {
+    font-size: 0.7rem;
+}
+
+/* Scroll Adjustment */
+#section-score {
+    scroll-margin-top: 120px;
+}
+
+html {
+    scroll-behavior: smooth;
 }

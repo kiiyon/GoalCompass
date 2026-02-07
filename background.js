@@ -15,7 +15,11 @@ chrome.action.onClicked.addListener(async (tab) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    try {
+    let handled = false;
+    console.log('[GoalCompass] onMessage:', message?.type);
     if (message.type === 'save-diary') {
+        handled = true;
         handleSaveDiary(message)
             .then(result => sendResponse(result))
             .catch(err => sendResponse({ success: false, error: err.message }));
@@ -23,13 +27,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'format-text') {
+        handled = true;
         handleFormatText(message.text, message.userPrompt, message.dictionary)
             .then(result => sendResponse(result))
             .catch(err => sendResponse({ success: false, error: err.message }));
         return true;
     }
 
+    if (message.type === 'format-meal') {
+        handled = true;
+        console.log('[GoalCompass] format-meal request');
+        handleFormatMeal(message.text)
+            .then(result => sendResponse(result))
+            .catch(err => sendResponse({ success: false, error: err.message }));
+        return true;
+    }
+
     if (message.type === 'sync-notebooklm') {
+        handled = true;
         handleSyncNotebookLM(sender.tab)
             .then(result => sendResponse(result))
             .catch(err => sendResponse({ success: false, error: err.message }));
@@ -37,6 +52,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'get-history') {
+        handled = true;
         handleGetHistory(message.date)
             .then(result => sendResponse(result))
             .catch(err => sendResponse({ success: false, error: err.message }));
@@ -44,6 +60,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'get-schedule') {
+        handled = true;
         handleGetSchedule(message.date)
             .then(result => sendResponse(result))
             .catch(err => sendResponse({ success: false, error: err.message }));
@@ -51,9 +68,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'generate-ai-response') {
+        handled = true;
         handleGenerateAIResponse(message.prompt)
             .then(result => sendResponse(result))
             .catch(err => sendResponse({ success: false, error: err.message }));
+        return true;
+    }
+    if (!handled) {
+        sendResponse({ success: false, error: `Unknown message type: ${message?.type || 'undefined'}` });
+        return true;
+    }
+    } catch (err) {
+        console.error('onMessage error:', err);
+        try { sendResponse({ success: false, error: err.message || 'Unknown error' }); } catch (e) {}
         return true;
     }
 });
@@ -84,7 +111,11 @@ async function handleSaveDiary(message) {
         redo: message.redo || '',
         confidence: message.confidence || '',
         scores: message.scores || '',
-        routine: message.routine || ''
+        routine: message.routine || '',
+        mealRaw: message.mealRaw || '',
+        mealJson: message.mealJson || '',
+        mealSummary: message.mealSummary || '',
+        mealNutrition: message.mealNutrition || ''
     };
 
     try {
@@ -172,11 +203,6 @@ async function handleGetSchedule(date) {
 }
 
 async function handleFormatText(text, userPrompt, dictionary) {
-    // --- SECURITY LOCK: AI FUNCTION DISABLED ---
-    console.log('AI Function called but disabled for security.');
-    return { success: false, error: '安全のため、AI機能は現在無効化されています。' };
-
-    // Original code (unreachable):
     const result = await chrome.storage.local.get(CONFIG_KEY);
     const config = result[CONFIG_KEY] || {};
 
@@ -196,14 +222,168 @@ async function handleFormatText(text, userPrompt, dictionary) {
 
     const prompt = `${basePrompt}${dictionaryInstruction}
 
-必ず以下のJSON形式のみを出力してください:
+    必ず以下のJSON形式のみを出力してください:
 {"title": "タイトル（30文字以内）", "tags": "タグ1,タグ2,タグ3", "content": "整形されたテキスト"}
 
 元のテキスト:
 ${text}`;
 
+    const gemini = await callGemini(prompt, config.geminiApiKey);
+    if (!gemini.success) return gemini;
+
+    const responseText = gemini.text.trim();
+
+    // マークダウンのコードブロックを除去
+    let cleanText = responseText
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
+
+    // title と tags を抽出
+    const titleMatch = cleanText.match(/"title"\s*:\s*"([^"]*)"/);
+    const tagsMatch = cleanText.match(/"tags"\s*:\s*"([^"]*)"/);
+
+    // content を抽出（"content": " の後から最後の "} までを取得）
+    const contentStartMatch = cleanText.match(/"content"\s*:\s*"/);
+
+    if (contentStartMatch) {
+        const contentStartIndex = cleanText.indexOf(contentStartMatch[0]) + contentStartMatch[0].length;
+        // 最後から "} を探す
+        let contentEndIndex = cleanText.length;
+
+        // 末尾から閉じカッコを探す
+        for (let i = cleanText.length - 1; i >= contentStartIndex; i--) {
+            if (cleanText[i] === '}') {
+                // その手前の " を探す
+                let j = i - 1;
+                while (j >= contentStartIndex && /\s/.test(cleanText[j])) j--;
+                if (cleanText[j] === '"') {
+                    contentEndIndex = j;
+                    break;
+                }
+            }
+        }
+
+        let extractedContent = cleanText.substring(contentStartIndex, contentEndIndex);
+
+        // エスケープを復元
+        extractedContent = extractedContent
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\');
+
+        return {
+            success: true,
+            title: titleMatch ? titleMatch[1] : '',
+            tags: tagsMatch ? tagsMatch[1] : '',
+            content: extractedContent
+        };
+    }
+
+    // フォールバック: JSONパースを試みる
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+        try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            return {
+                success: true,
+                title: parsed.title || '',
+                tags: parsed.tags || '',
+                content: parsed.content || text
+            };
+        } catch (e) {
+            // JSON parse failed, continue to fallback
+        }
+    }
+
+    // それでも失敗した場合: 整形されたテキストがあればそのまま返す
+    if (cleanText.length > 100) {
+        return {
+            success: true,
+            title: '',
+            tags: '',
+            content: cleanText
+        };
+    }
+
+    return { success: false, error: 'レスポンスの解析に失敗しました' };
+}
+
+async function handleFormatMeal(text) {
+    const result = await chrome.storage.local.get(CONFIG_KEY);
+    const config = result[CONFIG_KEY] || {};
+
+    if (!config.geminiApiKey) {
+        return { success: false, error: 'Gemini APIキーが設定されていません' };
+    }
+
+    const prompt = `次の食事メモを読み取り、朝/昼/夜/間食に分割し、推定の栄養素とカロリーを算出してJSONのみで出力してください。
+
+出力JSONスキーマ:
+{
+  "raw_text": "入力されたメモそのまま",
+  "summary": "1〜2文の要約",
+  "meals": {
+    "breakfast": ["..."],
+    "lunch": ["..."],
+    "dinner": ["..."],
+    "snack": ["..."]
+  },
+  "nutrition": {
+    "calories_kcal": number,
+    "protein_g": number,
+    "carbs_g": number,
+    "fat_g": number,
+    "fiber_g": number,
+    "salt_g": number,
+    "estimated": true
+  }
+}
+
+ルール:
+- 出力はJSONのみ
+- 数値は必ず推定して埋める（不明でも一般的な平均値で推定する）
+- 項目が無い場合は空配列
+- summaryは簡潔に
+- 単位は数値のみにする（"g" や "kcal" を付けない）
+
+食事メモ:
+${text}`;
+
+    const gemini = await callGemini(prompt, config.geminiApiKey);
+    if (!gemini.success) return gemini;
+
+    const responseText = (gemini.text || '').trim();
+    let cleanText = responseText
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
+
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        return { success: false, error: 'JSONの解析に失敗しました' };
+    }
+
     try {
-        const response = await fetch(`${GEMINI_API_URL}?key=${config.geminiApiKey}`, {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (!parsed.raw_text) parsed.raw_text = text;
+        if (!parsed.meals) parsed.meals = { breakfast: [], lunch: [], dinner: [], snack: [] };
+        if (!parsed.nutrition) parsed.nutrition = {};
+        if (parsed.nutrition.estimated === undefined) parsed.nutrition.estimated = true;
+
+        return {
+            success: true,
+            meal: parsed,
+            mealJson: JSON.stringify(parsed, null, 2)
+        };
+    } catch (e) {
+        return { success: false, error: 'JSONの解析に失敗しました' };
+    }
+}
+
+async function callGemini(prompt, apiKey) {
+    try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -220,98 +400,22 @@ ${text}`;
 
         const data = await response.json();
 
-        // コンテンツブロックチェック
         if (data.promptFeedback?.blockReason) {
             console.error('Content blocked:', data.promptFeedback);
             return { success: false, error: 'コンテンツポリシーによりブロックされました。内容を確認してください。' };
         }
 
-        // APIエラーチェック
         if (data.error) {
             console.error('Gemini API returned error:', data.error);
             return { success: false, error: `API Error: ${data.error.message || JSON.stringify(data.error)}` };
         }
 
-        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            const responseText = data.candidates[0].content.parts[0].text.trim();
-
-            // マークダウンのコードブロックを除去
-            let cleanText = responseText
-                .replace(/```json\s*/gi, '')
-                .replace(/```\s*/g, '')
-                .trim();
-
-            // title と tags を抽出
-            const titleMatch = cleanText.match(/"title"\s*:\s*"([^"]*)"/);
-            const tagsMatch = cleanText.match(/"tags"\s*:\s*"([^"]*)"/);
-
-            // content を抽出（"content": " の後から最後の "} までを取得）
-            const contentStartMatch = cleanText.match(/"content"\s*:\s*"/);
-
-            if (contentStartMatch) {
-                const contentStartIndex = cleanText.indexOf(contentStartMatch[0]) + contentStartMatch[0].length;
-                // 最後から "} を探す
-                let contentEndIndex = cleanText.length;
-
-                // 末尾から閉じカッコを探す
-                for (let i = cleanText.length - 1; i >= contentStartIndex; i--) {
-                    if (cleanText[i] === '}') {
-                        // その手前の " を探す
-                        let j = i - 1;
-                        while (j >= contentStartIndex && /\s/.test(cleanText[j])) j--;
-                        if (cleanText[j] === '"') {
-                            contentEndIndex = j;
-                            break;
-                        }
-                    }
-                }
-
-                let extractedContent = cleanText.substring(contentStartIndex, contentEndIndex);
-
-                // エスケープを復元
-                extractedContent = extractedContent
-                    .replace(/\\n/g, '\n')
-                    .replace(/\\"/g, '"')
-                    .replace(/\\\\/g, '\\');
-
-                return {
-                    success: true,
-                    title: titleMatch ? titleMatch[1] : '',
-                    tags: tagsMatch ? tagsMatch[1] : '',
-                    content: extractedContent
-                };
-            }
-
-            // フォールバック: JSONパースを試みる
-            const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                try {
-                    const parsed = JSON.parse(jsonMatch[0]);
-                    return {
-                        success: true,
-                        title: parsed.title || '',
-                        tags: parsed.tags || '',
-                        content: parsed.content || text
-                    };
-                } catch (e) {
-                    // JSON parse failed, continue to fallback
-                }
-            }
-
-            // それでも失敗した場合: 整形されたテキストがあればそのまま返す
-            if (cleanText.length > 100) {
-                return {
-                    success: true,
-                    title: '',
-                    tags: '',
-                    content: cleanText
-                };
-            }
-
-            return { success: false, error: 'レスポンスの解析に失敗しました' };
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+            return { success: false, error: 'AIからの応答がありませんでした' };
         }
 
-        return { success: false, error: 'AIからの応答がありませんでした' };
+        return { success: true, text: text.trim() };
     } catch (err) {
         console.error('Gemini API error:', err);
         return { success: false, error: 'API呼び出しに失敗しました: ' + err.message };

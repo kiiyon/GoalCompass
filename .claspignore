@@ -1,0 +1,12 @@
+**/*.html
+**/*.css
+**/*.md
+**/*.json
+!appsscript.json
+app.js
+background.js
+syncInject.js
+chart.js
+manifest.json
+.git/**
+node_modules/**
